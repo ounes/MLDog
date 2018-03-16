@@ -18,6 +18,15 @@ from keras.applications.vgg16 import preprocess_input
 
 import numpy as np
 
+def get_model():
+    # Load model VGG16 as described in https://arxiv.org/abs/1409.1556
+    # This is going to take some time...
+    base_model = VGG16(weights='imagenet')
+    # Model will produce the output of the 'fc2'layer which is the penultimate neural network layer
+    # (see the paper above for mode details)
+    model = Model(input=base_model.input, output=base_model.get_layer('fc2').output)
+    return model
+
 def main():
 
     # Load model VGG16 as described in https://arxiv.org/abs/1409.1556
@@ -39,9 +48,21 @@ def main():
             json.dump(features, out)
 
 
+def extract_features_from_binary(model, image_data):
+    from PIL import Image
+    from io import BytesIO
+    byteIO_image_data = BytesIO(image_data)
+    pil_image = Image.open(byteIO_image_data)
+    pil_image = pil_image.resize((224,224))
+    x = image.img_to_array(pil_image)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+
+    features = model.predict(x)
+    return features.tolist()[0]
+
 def extract_features(model, image_path):
 
-    img = image.load_img(image_path, target_size=(224, 224))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     x = preprocess_input(x)

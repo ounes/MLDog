@@ -2,7 +2,7 @@ import sys
 from pyspark.mllib.classification import SVMWithSGD
 from pyspark.mllib.regression import LabeledPoint
 from pyspark import SparkContext
-from extract_features import extract_features_from_binary2, get_model
+from extract_features import extract_features_from_binary, get_model
 
 
 def chargement(sc, dir):
@@ -23,16 +23,20 @@ def split_rdd(rdd):
 def prepare_data(rdd):
 	return rdd.map(lambda name_feature: LabeledPoint(float(1) if "yorkshire" in name_feature[0] else float(0), name_feature[1]))
 
+def map_model(partition_data):
+	model = get_model()
+	for name_content in partition_data:
+		yield (name_content[0], extract_features_from_binary(model,name_content[1]))
 
 
 def main():
 	sc = SparkContext(master="local[2]",appName="2typesDogs")
 	rdd_image = chargement(sc, sys.argv[1])
 
+	rdd_image = rdd_image.mapPartitions(map_model)
+
 	rdd_train, rdd_test = split_rdd(rdd_image)
 
-	rdd_train = rdd_train.map(lambda name_content: (name_content[0], extract_features_from_binary2(name_content[1])))
-	rdd_test = rdd_test.map(lambda name_content: (name_content[0], extract_features_from_binary2(name_content[1])))
 
 	svm=SVMWithSGD.train(prepare_data(rdd_train))
 	rdd_test = rdd_test.map(lambda name_content: (name_content[0], svm.predict(name_content[1])))

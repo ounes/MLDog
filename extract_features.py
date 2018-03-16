@@ -61,6 +61,20 @@ def extract_features_from_binary(model, image_data):
     features = model.predict(x)
     return features.tolist()[0]
 
+def extract_features_from_binary2(image_data):
+    model = get_model()
+    from PIL import Image
+    from io import BytesIO
+    byteIO_image_data = BytesIO(image_data)
+    pil_image = Image.open(byteIO_image_data)
+    pil_image = pil_image.resize((224,224))
+    x = image.img_to_array(pil_image)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+
+    features = model.predict(x)
+    return features.tolist()[0]
+
 def extract_features(model, image_path):
 
     x = image.img_to_array(img)
